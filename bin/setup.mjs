@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { dataHome, configHome } from '../lib/config.mjs';
+import { dataHome, configHome, readConfig, configFile, stateDir } from '../lib/config.mjs';
 
 const source = path.resolve(process.argv[2]);
 const manifest = JSON.parse(fs.readFileSync(path.join(source, 'release.json'), 'utf8'));
@@ -14,6 +14,10 @@ const current = path.join(root, 'current');
 const marker = path.join(root, '.osu-diary-install');
 const unit = path.join(configHome(), 'systemd/user/osu-diary.service');
 const unitBefore = fs.existsSync(unit) ? fs.readFileSync(unit, 'utf8') : null;
+for (const kept of [readConfig().dataDir, configFile(), stateDir()]) {
+  const resolved = path.resolve(kept);
+  if (resolved === root || resolved.startsWith(root + path.sep)) throw new Error('The program prefix must not contain diary data, configuration or logs. Choose another OSU_DIARY_PREFIX.');
+}
 const serviceAvailable = () => process.env.OSU_DIARY_NO_SYSTEMD !== '1' && spawnSync('systemctl', ['--user', 'show-environment'], { stdio: 'ignore', timeout: 5000 }).status === 0;
 const run = (directory, args) => spawnSync(path.join(directory, 'runtime/bin/node'), [path.join(directory, 'bin/osu-diary.mjs'), ...args], { stdio: 'inherit', timeout: 45000 });
 const shellQuote = value => "'" + value.replace(/'/g, "'\\''") + "'";

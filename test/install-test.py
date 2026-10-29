@@ -129,6 +129,11 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
         execute(['bash', str(INSTALL)], env)
         assert unit.read_text() == '# existing user service\n'
         print('PASS: existing unmanaged systemd service preserved', flush=True)
+        # A later data override inside the program must never be deleted.
+        nested = root/'protected-scores'; nested.mkdir(); (nested/'keep.txt').write_text('keep')
+        execute([str(command), 'uninstall'], {**env, 'OSU_DIARY_DATA':str(nested)}, ok=False)
+        assert (nested/'keep.txt').read_text() == 'keep'
+        print('PASS: uninstall refuses to remove data placed inside the program prefix', flush=True)
         execute([str(command), 'uninstall'], env)
         assert not command.exists() and not root.exists()
         assert cfg.exists() and (home/'scores/diary.db').exists()

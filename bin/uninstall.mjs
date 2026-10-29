@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { projectDir, configHome } from '../lib/config.mjs';
+import { projectDir, configHome, readConfig, configFile, stateDir } from '../lib/config.mjs';
 import { manage } from '../lib/manage.mjs';
 
 export async function uninstall() {
@@ -10,6 +10,10 @@ export async function uninstall() {
   catch { throw new Error('This source checkout is not managed by the installer.'); }
   const root = fs.realpathSync(install.root);
   if (!fs.existsSync(path.join(root, '.osu-diary-install')) || !projectDir.startsWith(root + path.sep)) throw new Error('Invalid installation marker; nothing was removed.');
+  for (const kept of [readConfig().dataDir, configFile(), stateDir()]) {
+    const resolved = path.resolve(kept);
+    if (resolved === root || resolved.startsWith(root + path.sep)) throw new Error('Your data/configuration/logs are inside the program prefix. Move or back them up before uninstalling; nothing was removed.');
+  }
   await manage('disable'); await manage('stop');
   const unit = path.join(configHome(), 'systemd/user/osu-diary.service');
   if (fs.existsSync(unit) && fs.readFileSync(unit, 'utf8').includes('# Managed by osu-diary portable installer')) {
