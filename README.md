@@ -88,7 +88,7 @@ Everything listens on loopback. Your scores stay local. Cover art is fetched fro
 
 ## Development and validation
 
-Requires Node.js 24.15+, npm, Rust/Cargo and a C toolchain because rosu-pp is compiled from source. Use a clean checkout; do not commit your database or credentials.
+Requires Node.js 24.15+, npm, Python 3.10+, zstd, Rust/Cargo and a C toolchain because rosu-pp is compiled from source. Use a clean checkout; do not commit your database or credentials.
 
 ```fish
 npm ci
@@ -98,7 +98,7 @@ node bin/osu-diary.mjs serve
 python3 scripts/build-release.py
 ```
 
-The release build pins Node.js and tosu versions/checksums in `scripts/versions.json`, bundles production dependencies, and includes licenses plus tosu's corresponding source as a separate release asset. CI checks the archive on clean Linux distributions and uses synthetic scores for recording/UI tests. Real-game memory reading still depends on osu!/tosu compatibility and requires a separate play test.
+The release build pins Node.js and tosu versions/checksums in `scripts/versions.json`, bundles production dependencies, and includes licenses plus corresponding source archives for tosu and the bundled GCC runtime. The compatibility runtime is scoped to tosu; no system libraries are replaced. CI checks the archive on clean Linux distributions and uses synthetic scores for recording/UI tests. Real-game memory reading still depends on osu!/tosu compatibility and requires a separate play test.
 
 ## License
 

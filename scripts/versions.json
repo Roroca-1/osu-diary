@@ -2,5 +2,17 @@
   "node": "24.22.2",
   "nodeSha256": "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75",
   "tosu": "4.26.3",
-  "tosuSha256": "81f379ef582b0528497b715ce8a6bf4e0efb568ebce8430a7ae8428bbaee8f8b"
+  "tosuSha256": "81f379ef582b0528497b715ce8a6bf4e0efb568ebce8430a7ae8428bbaee8f8b",
+  "compat": [
+    {
+      "name": "libstdcxx",
+      "file": "libstdcxx-13.4.0-h934c35e_20.conda",
+      "sha256": "b16c1504aeeaad7a583c010e300c061faa07cce65f5137583c81e4e611e60e24"
+    },
+    {
+      "name": "libgcc",
+      "file": "libgcc-13.4.0-he0feb66_20.conda",
+      "sha256": "3aea71288652e300feae0b95131468079a6c59a417c2a947e1526e6a265e2414"
+    }
+  ]
 }

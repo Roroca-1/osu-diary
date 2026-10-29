@@ -10,6 +10,12 @@ Their copyright and license files are included with the installed packages.
   Corresponding source is provided as a release asset `tosu-4.26.3-source.tar.gz`.
   Upstream: https://github.com/tosuapp/tosu/tree/v4.26.3
   Users may replace the executable at `vendor/tosu/tosu` with their own compatible build.
+- GCC 13.4 runtime libraries (conda-forge builds): GPL-3.0-only WITH GCC-exception-3.1.
+  Package licenses, build recipes and patches are retained at `vendor/compat/notices/`.
+  Corresponding GCC source accompanies the release as `gcc-13.4.0-source.tar.xz`.
+  Source: https://ftp.gnu.org/gnu/gcc/gcc-13.4.0/
+  Packaging: https://github.com/conda-forge/ctng-compilers-feedstock
+  These libraries are used only by the bundled tosu process.
 - Realm JS 12.15.0 and Realm Core: Apache-2.0; package notices are retained.
   https://github.com/realm/realm-js
 - rosu-pp 0.9.4: MIT. https://github.com/MaxOhn/rosu-pp-js

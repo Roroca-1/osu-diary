@@ -63,9 +63,31 @@ with tempfile.TemporaryDirectory(prefix='osu-diary-build-') as temporary:
     source_dest = OUT / f'tosu-{PINS["tosu"]}-source.tar.gz'
     if not source_dest.exists(): urllib.request.urlretrieve(source_url, source_dest)
     (vendor / 'SOURCE.txt').write_text(f'Unmodified official binary: tosu v{PINS["tosu"]}\nCorresponding source: {source_url}\nA copy of the source archive accompanies this release.\n')
+    # Upstream tosu's addon requires GCC 13 symbols. Bundle compatible runtime
+    # libraries built against glibc 2.17, scoped to tosu rather than the system.
+    compat = stage / 'vendor/compat'
+    compat.mkdir()
+    for package in PINS['compat']:
+        conda = download('https://conda.anaconda.org/conda-forge/linux-64/' + package['file'], package['sha256'])
+        unpack = pathlib.Path(temporary) / package['name']
+        unpack.mkdir()
+        with zipfile.ZipFile(conda) as outer:
+            for member in outer.namelist():
+                if member.endswith('.tar.zst'):
+                    compressed = unpack / member
+                    compressed.write_bytes(outer.read(member))
+                    raw = compressed.with_suffix('')
+                    with raw.open('wb') as target:
+                        subprocess.run(['zstd', '-q', '-d', '-c', str(compressed)], stdout=target, check=True)
+                    with tarfile.open(raw) as archive:
+                        archive.extractall(unpack, filter='fully_trusted')
+        shutil.copytree(unpack / 'lib', compat / 'lib', dirs_exist_ok=True, symlinks=True)
+        shutil.copytree(unpack / 'info', compat / 'notices' / package['name'])
+    gcc_source = OUT / 'gcc-13.4.0-source.tar.xz'
+    if not gcc_source.exists(): urllib.request.urlretrieve('https://ftp.gnu.org/gnu/gcc/gcc-13.4.0/gcc-13.4.0.tar.xz', gcc_source)
     (stage / 'release.json').write_text(json.dumps({'version': VERSION, 'node': PINS['node'], 'tosu': PINS['tosu'], 'platform': 'linux-x64'}, indent=2) + '\n')
     artifact = OUT / f'osu-diary-v{VERSION}-linux-x64.tar.gz'
     with tarfile.open(artifact, 'w:gz', compresslevel=6) as archive: archive.add(stage, arcname='osu-diary')
-    assets = [artifact, source_dest]
+    assets = [artifact, source_dest, gcc_source]
     (OUT / 'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in assets))
     print('Built', artifact, flush=True)

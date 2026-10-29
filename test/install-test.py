@@ -38,7 +38,7 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
         (tosu_config/'tosu.env').write_text('ENABLE_AUTOUPDATE=false\nOPEN_DASHBOARD_ON_STARTUP=false\nSERVER_IP=127.0.0.1\nSERVER_PORT='+tosu_port+'\n')
         tosu_log = home/'tosu-probe.log'
         with tosu_log.open('w') as log:
-            reader = subprocess.Popen([str(root/'current/vendor/tosu/tosu')], env={**env, 'XDG_CONFIG_HOME':str(tosu_config.parent), 'XDG_DATA_HOME':str(home/'tosu probe data'), 'XDG_CACHE_HOME':str(home/'tosu probe cache')}, stdout=log, stderr=log)
+            reader = subprocess.Popen([str(root/'current/vendor/tosu/tosu')], env={**env, 'LD_LIBRARY_PATH':str(root/'current/vendor/compat/lib'), 'XDG_CONFIG_HOME':str(tosu_config.parent), 'XDG_DATA_HOME':str(home/'tosu probe data'), 'XDG_CACHE_HOME':str(home/'tosu probe cache')}, stdout=log, stderr=log)
             try:
                 for _ in range(80):
                     try:

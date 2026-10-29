@@ -12,6 +12,7 @@ export OSU_DIARY_PORT
 OSU_DIARY_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
 command="$OSU_DIARY_BIN_DIR/osu-diary"
 cleanup() {
+    if [[ $? != 0 ]]; then journalctl --user -u osu-diary.service --no-pager -n 100 || true; fi
     if [[ -x $command ]]; then "$command" uninstall; fi
     rm -rf -- "$tmp"
 }
