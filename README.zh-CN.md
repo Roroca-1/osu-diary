@@ -20,7 +20,7 @@ osu!lazer ──内存──▶ tosu (ws://127.0.0.1:24050) ──websocket/v2�
 curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | bash
 ```
 
-支持 x86-64 glibc Linux；安装包自带 Node.js、原生依赖与 tosu，无需 Rust/npm/Git。Windows、ARM、Alpine 暂不支持。安装器会解释 Linux 内存读取权限，并在需要 sudo 前征求同意；权限调整仅本次开机有效。详细安装、更新、排错与卸载方式见 [English README](README.md)。
+支持 x86-64、glibc 2.38+ 的现代 Linux（已测试 Ubuntu 24.04、Fedora、Arch）；安装包自带 Node.js、原生依赖与 tosu，无需 Rust/npm/Git。Ubuntu 22.04 因 tosu 系统依赖较新暂不支持，安装器会提前给出说明。Windows、ARM、Alpine 暂不支持。安装器会解释 Linux 内存读取权限，并在需要 sudo 前征求同意；权限调整仅本次开机有效。详细安装、更新、排错与卸载方式见 [English README](README.md)。
 
 ## 使用
 

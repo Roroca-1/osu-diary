@@ -29,20 +29,26 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
            'OSU_DIARY_DATA': str(home/'scores')}
     command = home/'bin folder/osu-diary'
     root = home/'program files'
+    if '--expect-unsupported' in sys.argv:
+        result = execute(['bash', str(INSTALL)], env, ok=False)
+        assert 'glibc 2.38 or newer' in result.stderr, result.stderr
+        assert not command.exists() and not root.exists() and not (home/'scores').exists()
+        print('PASS: Ubuntu 22.04 is rejected with a clear prerequisite message before any installation changes')
+        raise SystemExit(0)
     try:
         execute(['bash', str(INSTALL)], env)
         assert 'Running:' in execute([str(command), 'status'], env).stdout
         execute([str(command), 'doctor'], env)
         # The bootstrap's temporary directory is gone: installed runtime links
         # must remain relative to the installed program, never the download stage.
-        for link in ['vendor/compat/lib/libstdc++.so.6', 'vendor/compat/lib/libgcc_s.so.1', 'runtime/bin/npm']:
+        for link in ['runtime/bin/npm']:
             assert (root/'current'/link).exists(), 'Broken installed symlink: '+link
         tosu_config = home/'tosu probe config/tosu'; tosu_config.mkdir(parents=True)
         tosu_port = free_port()
         (tosu_config/'tosu.env').write_text('ENABLE_AUTOUPDATE=false\nOPEN_DASHBOARD_ON_STARTUP=false\nSERVER_IP=127.0.0.1\nSERVER_PORT='+tosu_port+'\n')
         tosu_log = home/'tosu-probe.log'
         with tosu_log.open('w') as log:
-            reader = subprocess.Popen([str(root/'current/vendor/tosu/tosu')], env={**env, 'LD_LIBRARY_PATH':str(root/'current/vendor/compat/lib'), 'XDG_CONFIG_HOME':str(tosu_config.parent), 'XDG_DATA_HOME':str(home/'tosu probe data'), 'XDG_CACHE_HOME':str(home/'tosu probe cache')}, stdout=log, stderr=log)
+            reader = subprocess.Popen([str(root/'current/vendor/tosu/tosu')], env={**env, 'XDG_CONFIG_HOME':str(tosu_config.parent), 'XDG_DATA_HOME':str(home/'tosu probe data'), 'XDG_CACHE_HOME':str(home/'tosu probe cache')}, stdout=log, stderr=log)
             try:
                 for _ in range(80):
                     try:

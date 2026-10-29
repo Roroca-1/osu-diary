@@ -23,7 +23,6 @@ jobs:
         env:
           REALM_DISABLE_ANALYTICS: '1'
       - run: npm test && npm run test:ui
-      - run: sudo apt-get update -qq && sudo apt-get install -y zstd
       - run: python3 scripts/build-release.py
       - uses: actions/upload-artifact@v4
         with:
@@ -54,7 +53,12 @@ jobs:
           path: dist
       - name: Exercise install/update/rollback/uninstall
         shell: bash
-        run: python3 test/install-test.py dist
+        run: |
+          if [[ "${{ matrix.image }}" == ubuntu:22.04 ]]; then
+            python3 test/install-test.py dist --expect-unsupported
+          else
+            python3 test/install-test.py dist
+          fi
   user-service:
     needs: build
     runs-on: ubuntu-24.04

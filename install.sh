@@ -7,6 +7,9 @@ fail() { printf 'osu-diary: %s\n' "$*" >&2; exit 1; }
 [[ $(uname -s) == Linux && $(uname -m) == x86_64 ]] || fail 'This release supports x86-64 Linux only.'
 for tool in curl tar sha256sum mktemp; do command -v "$tool" >/dev/null || fail "Install the required utility: $tool"; done
 if ! getconf GNU_LIBC_VERSION >/dev/null 2>&1; then fail 'This release requires glibc Linux; Alpine/musl is not supported.'; fi
+glibc=$(getconf GNU_LIBC_VERSION)
+[[ $glibc =~ ^glibc\ ([0-9]+)\.([0-9]+) ]] || fail 'Unable to determine the glibc version.'
+(( BASH_REMATCH[1] > 2 || (BASH_REMATCH[1] == 2 && BASH_REMATCH[2] >= 38) )) || fail 'The bundled tosu requires glibc 2.38 or newer. Use Ubuntu 24.04+ or a current Fedora/Arch desktop; Ubuntu 22.04 is not supported.'
 [[ ${EUID:-$(id -u)} != 0 ]] || [[ ${OSU_DIARY_ALLOW_ROOT:-0} == 1 ]] || fail 'Run this installer as your normal user, without sudo.'
 
 release=${OSU_DIARY_VERSION:-latest}

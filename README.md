@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh 
 
 The download includes Node.js, native calculation/import libraries, and the official tosu memory reader. **No Node.js, npm, Rust or Git installation is required.** The installer starts the diary and enables login startup when a systemd user session is available. Without systemd, it starts in the background; use `osu-diary start` after logging in again.
 
-Requirements: **x86-64 glibc Linux**, bash, curl, tar, gzip, coreutils and a browser. Release checks cover Ubuntu 22.04/24.04, Fedora and Arch. Windows, ARM and Alpine/musl are not supported yet. Running the installer as root is intentionally rejected.
+Requirements: **x86-64 Linux with glibc 2.38+**, bash, curl, tar, gzip, coreutils and a browser. The full archive is tested on Ubuntu 24.04, Fedora and Arch. **Ubuntu 22.04 is unsupported** because the official tosu reader/calculator require newer system libraries; the installer detects this and stops before changing files. Windows, ARM and Alpine/musl are not supported yet. Running the installer as root is intentionally rejected.
 
 Open **http://127.0.0.1:24051**. Launch osu!lazer normally and play a map. A running tosu endpoint on port 24050 is reused; otherwise the bundled copy is started with its own configuration. osu! API credentials are optional, only for refreshing submitted scores with official pp.
 
@@ -88,7 +88,7 @@ Everything listens on loopback. Your scores stay local. Cover art is fetched fro
 
 ## Development and validation
 
-Requires Node.js 24.15+, npm, Python 3.10+, zstd, Rust/Cargo and a C toolchain because rosu-pp is compiled from source. Use a clean checkout; do not commit your database or credentials.
+Requires Node.js 24.15+, npm, Python 3.10+, Rust/Cargo and a C toolchain because rosu-pp is compiled from source. Use a clean checkout; do not commit your database or credentials.
 
 ```fish
 npm ci
@@ -98,7 +98,7 @@ node bin/osu-diary.mjs serve
 python3 scripts/build-release.py
 ```
 
-The release build pins Node.js and tosu versions/checksums in `scripts/versions.json`, bundles production dependencies, and includes licenses plus corresponding source archives for tosu and the bundled GCC runtime. The compatibility runtime is scoped to tosu; no system libraries are replaced. CI checks the archive on clean Linux distributions and uses synthetic scores for recording/UI tests. Real-game memory reading still depends on osu!/tosu compatibility and requires a separate play test.
+The release build pins Node.js and tosu versions/checksums in `scripts/versions.json`, bundles production dependencies, and includes licenses plus tosu's corresponding source as a separate release asset. CI checks the archive on clean Linux distributions and uses synthetic scores for recording/UI tests. Real-game memory reading still depends on osu!/tosu compatibility and requires a separate play test.
 
 ## License
 
