@@ -24,7 +24,7 @@ def download(url, digest):
 with tempfile.TemporaryDirectory(prefix='osu-diary-build-') as temporary:
     stage = pathlib.Path(temporary) / 'osu-diary'
     stage.mkdir()
-    for name in ['bin', 'lib', 'web', 'server.mjs', 'package.json', 'package-lock.json', '.npmrc', 'LICENSE', 'README.md', 'README.zh-CN.md', 'THIRD_PARTY_NOTICES.md']:
+    for name in ['bin', 'lib', 'web', 'server.mjs', 'package.json', 'package-lock.json', '.npmrc', 'LICENSE', 'README.md', 'README.zh-CN.md', 'THIRD_PARTY_NOTICES.md', 'CONTRIBUTING.md', 'docs']:
         src = ROOT / name
         if src.is_dir(): shutil.copytree(src, stage / name)
         else: shutil.copy2(src, stage / name)

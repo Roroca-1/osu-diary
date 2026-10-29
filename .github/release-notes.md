@@ -1,16 +1,19 @@
-First public Linux release of osu-diary.
+English / 简体中文 support and clearer statistics for osu-diary.
 
-Install in fish, bash or zsh:
+- Switch language in the header without losing your filters, chart choices or unfinished settings. Dates, numbers, errors and job progress follow your language.
+- Per-play pp and daily best now share a real calendar-time axis. Accuracy shows daily average and best, with a full 0–100% option.
+- AR and BPM have Plays / Accuracy views, coarse and fine groups, detailed tooltips and matching score drilldowns. Tempo & Accuracy explains its 95% reference line.
+- Responsive SVG charts support hover, tap and keyboard exploration. All aggregates use every matching score; large scatter plots clearly label sampling.
+- Updated bilingual guides and screenshots are included in the archive. Existing scores and configuration are preserved; no database migration is required.
+
+Install or update in fish, bash or zsh:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | bash
 ```
 
-The archive includes Node.js, native libraries, and tosu. Users do not need npm, Rust or Git. Supports x86-64 Linux with glibc 2.38+ (tested on Ubuntu 24.04, Fedora and Arch). Ubuntu 22.04 is unsupported because the official tosu binary/calculator need newer system libraries; it is rejected before installation. Windows, ARM and Alpine are deferred.
+Supports modern x86-64 Linux with glibc 2.38+ (Ubuntu 24.04, Fedora and Arch). Ubuntu 22.04, Windows, ARM and Alpine remain unsupported. Node.js and the official tosu reader are bundled.
 
-Includes portable lifecycle commands, user login startup, isolated tosu settings, update rollback, and synthetic recording/UI tests. The installer asks before requesting a temporary Linux memory-access permission change. Data/configuration are retained on update and uninstall.
+Validation includes synthetic recording, bilingual UI, statistics edge cases, packaged install/update/rollback and systemd lifecycle checks. Real-game recording still depends on tosu compatibility with your osu! build; automated checks do not replace a live play test.
 
-The dashboard currently uses Chinese. Real-game recording depends on tosu's support for the installed osu! build; mock recording tests do not replace a play test. See README.md for data locations, diagnostics and prerequisites.
-
-`tosu-4.26.3-source.tar.gz` contains the corresponding source for the unmodified bundled tosu executable. Bundled dependency licenses remain in the archive.
-
+The accompanying `tosu-4.26.3-source.tar.gz` is the corresponding source for the unmodified bundled reader. Dependency licenses remain in the archive.

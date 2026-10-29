@@ -32,7 +32,7 @@ python3 scripts/build-release.py
 python3 test/install-test.py dist
 ```
 
-Unit, recording and UI checks use synthetic scores and isolated data. The install test exercises the built archive in a temporary home. The systemd test is restricted to disposable GitHub Actions runners.
+Unit, recording, statistics and UI checks use synthetic scores and isolated data. Statistics cases cover every range/precision, exact drilldown counts, DST, empty/single-day datasets, missing days, metric extremes and 16,001 plays. UI cases cover both languages, blocked storage, unsaved settings, chart controls, keyboard interaction and translated job failures. The install test exercises the built archive in a temporary home. The systemd test is restricted to disposable GitHub Actions runners.
 
 The validation workflow checks full installation on Ubuntu 24.04, Fedora and Arch, plus early rejection of unsupported Ubuntu 22.04. Mock recording and module-loading checks do not replace a real-game play test.
 
@@ -46,4 +46,4 @@ Before tagging a release, ensure the package version matches the intended `vMAJO
 
 Keep both READMEs short and focused on the product. Put detailed user instructions in the English and Chinese guides under `docs/`.
 
-The shared images under `docs/images/` are real browser screenshots with the dashboard's original appearance. Update them using calendar, statistics and beatmap views, with permission to publish any personal score history shown. Never include credentials, settings exports or databases. Keep image framing consistent, ensure covers/charts have loaded, and review the rendered README after updating links.
+The language-specific images under `docs/images/en/` and `docs/images/zh-CN/` are real browser screenshots with the dashboard's original appearance. Update them using calendar, statistics and beatmap views, with permission to publish any personal score history shown. Never include credentials, settings exports or databases. Keep image framing consistent, ensure covers/charts have loaded, and review the rendered README after updating links.

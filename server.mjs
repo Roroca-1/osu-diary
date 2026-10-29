@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { errorCode } from './lib/messages.mjs';
 // osu-diary 服务器：tosu 监听 + SQLite 日记 + Web 界面 + 封面缓存
 import http from 'node:http';
 import fs from 'node:fs';
@@ -31,9 +32,9 @@ export async function createServer(opts = {}) {
   let tosuClient = null;
   const coverFetching = new Set();          // 正在拉取的封面（去重）
   const jobs = {                            // 后台任务状态
-    pp: { running: false, i: 0, total: 0, ok: 0, skip: 0, msg: '' },
-    ppPull: { running: false, i: 0, total: 0, ok: 0, skip: 0, msg: '' },
-    warmup: { running: false, i: 0, total: 0, ok: 0, msg: '' },
+    pp: { running: false, i: 0, total: 0, ok: 0, skip: 0, msg: '', status: 'idle', messageKey: 'job_idle', params: {} },
+    ppPull: { running: false, i: 0, total: 0, ok: 0, skip: 0, msg: '', status: 'idle', messageKey: 'job_idle', params: {} },
+    warmup: { running: false, i: 0, total: 0, ok: 0, msg: '', status: 'idle', messageKey: 'job_idle', params: {} },
   };
 
   function saveConfig(patch) {
@@ -43,7 +44,7 @@ export async function createServer(opts = {}) {
 
   function startPpJob({ withPp = true } = {}) {
     if (jobs.pp.running) return false;
-    jobs.pp = { running: true, i: 0, total: 0, ok: 0, skip: 0, msg: '开始…' };
+    jobs.pp = { running: true, i: 0, total: 0, ok: 0, skip: 0, msg: '开始…', status: 'running', messageKey: 'job_running', params: {} };
     const filesDir = detectLazerFiles();
     (async () => {
       await new Promise(r => setImmediate(r)); // 先让 HTTP 响应返回
@@ -52,11 +53,13 @@ export async function createServer(opts = {}) {
           filesDir,
           withPp,
           log: (m) => { jobs.pp.msg = m; console.log('[pp]', m); },
-          onProgress: (i, total, st) => { jobs.pp.i = i; jobs.pp.total = total; jobs.pp.ok = st.ok; jobs.pp.skip = st.noFile + st.daSkip + st.err; },
+          onProgress: (i, total, st) => { jobs.pp.i = i; jobs.pp.total = total; jobs.pp.ok = st.ppGot; jobs.pp.skip = st.noFile + st.skip + st.err; },
         });
         jobs.pp.ok = res.ok; jobs.pp.skip = res.noFile + res.daSkip + res.err; jobs.pp.total = res.total;
+        jobs.pp.status = 'done'; jobs.pp.messageKey = 'job_pp_done'; jobs.pp.params = { ok: res.ok, missing: res.noFile, skipped: res.daSkip, errors: res.err };
         jobs.pp.msg = `完成：${res.ok} 条获得 pp（无谱面文件 ${res.noFile}，lazer 专属 mods ${res.daSkip}，出错 ${res.err}）`;
       } catch (e) {
+        jobs.pp.status = 'error'; jobs.pp.messageKey = errorCode(e); jobs.pp.params = {};
         jobs.pp.msg = '失败：' + e.message;
       } finally {
         jobs.pp.running = false;
@@ -69,7 +72,7 @@ export async function createServer(opts = {}) {
     if (jobs.ppPull.running) return false;
     const { clientId, clientSecret } = cfg.osuApi || {};
     const userId = cfg.osuUser?.id;
-    jobs.ppPull = { running: true, i: 0, total: 0, ok: 0, skip: 0, msg: '开始…' };
+    jobs.ppPull = { running: true, i: 0, total: 0, ok: 0, skip: 0, msg: '开始…', status: 'running', messageKey: 'job_running', params: {} };
     (async () => {
       await new Promise(r => setImmediate(r));
       try {
@@ -80,8 +83,10 @@ export async function createServer(opts = {}) {
           log: (m) => { jobs.ppPull.msg = m; console.log('[pp-pull]', m); },
           onProgress: (i, total, st) => { jobs.ppPull.i = i; jobs.ppPull.total = total; jobs.ppPull.ok = st.ok; jobs.ppPull.skip = st.notFound + st.fail; },
         });
+        jobs.ppPull.status = 'done'; jobs.ppPull.messageKey = 'job_pull_done'; jobs.ppPull.params = { ok: res.ok, missing: res.notFound, errors: res.fail };
         jobs.ppPull.msg = `完成：${res.ok} 条更新为在线 pp；无匹配 ${res.notFound}；请求失败 ${res.fail}`;
       } catch (e) {
+        jobs.ppPull.status = 'error'; jobs.ppPull.messageKey = errorCode(e); jobs.ppPull.params = {};
         jobs.ppPull.msg = '失败：' + e.message;
       } finally {
         jobs.ppPull.running = false;
@@ -103,7 +108,7 @@ export async function createServer(opts = {}) {
 
   function startCoverWarmup() {
     if (jobs.warmup.running) return false;
-    jobs.warmup = { running: true, i: 0, total: 0, ok: 0, msg: '开始…' };
+    jobs.warmup = { running: true, i: 0, total: 0, ok: 0, msg: '开始…', status: 'running', messageKey: 'job_running', params: {} };
     (async () => {
       await new Promise(r => setImmediate(r));
       try {
@@ -121,8 +126,10 @@ export async function createServer(opts = {}) {
           }
         }
         await Promise.all(Array.from({ length: 8 }, () => worker()));
+        jobs.warmup.status = 'done'; jobs.warmup.messageKey = 'job_covers_done'; jobs.warmup.params = { ok, total: sets.length };
         jobs.warmup.msg = `完成：成功缓存 ${ok}/${sets.length} 张封面`;
       } catch (e) {
+        jobs.warmup.status = 'error'; jobs.warmup.messageKey = errorCode(e); jobs.warmup.params = {};
         jobs.warmup.msg = '失败：' + e.message;
       } finally {
         jobs.warmup.running = false;
@@ -192,7 +199,7 @@ export async function createServer(opts = {}) {
       }
       if (p === '/api/day') {
         const date = url.searchParams.get('date');
-        if (!date) return json(res, { error: '缺少 date' }, 400);
+        if (!date) return json(res, { error: '缺少 date', code: 'DATE_REQUIRED', params: {} }, 400);
         return json(res, dayPlays(db, date));
       }
       if (p === '/api/plays') {
@@ -213,7 +220,7 @@ export async function createServer(opts = {}) {
       }
       if (p === '/api/stats') {
         const range = q2range(url.searchParams.get('range'));
-        return json(res, stats(db, range));
+        return json(res, stats(db, range, { arStep: Number(url.searchParams.get('arStep') || 0.5), bpmStep: Number(url.searchParams.get('bpmStep') || 10) }));
       }
       if (p.startsWith('/api/cover/')) {
         const setId = Number(p.slice('/api/cover/'.length));
@@ -271,9 +278,9 @@ export async function createServer(opts = {}) {
       }
       if (p === '/api/map') {
         const md5 = url.searchParams.get('md5');
-        if (!md5) return json(res, { error: '缺少 md5' }, 400);
+        if (!md5) return json(res, { error: '缺少 md5', code: 'MAP_REQUIRED', params: {} }, 400);
         const info = mapInfo(db, md5);
-        if (!info) return json(res, { error: '没有这张图' }, 404);
+        if (!info) return json(res, { error: '没有这张图', code: 'MAP_NOT_FOUND', params: {} }, 404);
         return json(res, info);
       }
       if (p === '/api/import/pp' && req.method === 'POST') {
@@ -327,7 +334,7 @@ export async function createServer(opts = {}) {
         // 删除已记录的非本人成绩（用户名筛选生效前录进去的旧数据）
         const allowed = String(cfg.users || '').split(',').map(s => s.trim()).filter(Boolean);
         const effective = allowed.length ? allowed : [cfg.selfName].filter(Boolean);
-        if (!effective.length) return json(res, { deleted: 0, note: '未配置任何用户名，无从判断' });
+        if (!effective.length) return json(res, { deleted: 0, note: '未配置任何用户名，无从判断', code: 'PLAYER_FILTER_REQUIRED', params: {} });
         const marks = effective.map(() => '?').join(',');
         const r = db.prepare(`DELETE FROM plays WHERE player IS NOT NULL AND player NOT IN (${marks})`).run(...effective);
         return json(res, { deleted: r.changes, kept: effective });
@@ -348,7 +355,7 @@ export async function createServer(opts = {}) {
         if (req.method === 'PUT') {
           const body = await readBody(req);
           let patch = {};
-          try { patch = JSON.parse(body || '{}'); } catch { return json(res, { error: 'JSON 无效' }, 400); }
+          try { patch = JSON.parse(body || '{}'); } catch { return json(res, { error: 'JSON 无效', code: 'INVALID_JSON', params: {} }, 400); }
           const next = {};
           if (typeof patch.users === 'string') next.users = patch.users;
           const osuApi = { ...(cfg.osuApi || {}) };
@@ -361,7 +368,7 @@ export async function createServer(opts = {}) {
           saveConfig(next);
           return json(res, { ok: true });
         }
-        return json(res, { error: '不支持的方法' }, 405);
+        return json(res, { error: '不支持的方法', code: 'METHOD_NOT_ALLOWED', params: {} }, 405);
       }
 
       /* ---- 静态页面 ---- */
@@ -373,7 +380,7 @@ export async function createServer(opts = {}) {
       return send(res, 200, fs.readFileSync(full), MIME[ext] || 'application/octet-stream');
     } catch (e) {
       console.error('[http]', e);
-      return json(res, { error: e.message }, 500);
+      return json(res, { error: e.message, code: errorCode(e), params: {} }, e.code === 'INVALID_BUCKET_STEP' ? 400 : 500);
     }
   });
 

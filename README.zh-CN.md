@@ -4,7 +4,7 @@
 
 [English](README.md) · [下载安装](https://github.com/Roroca-1/osu-diary/releases/latest) · [使用指南](docs/usage.zh-CN.md)
 
-![十月游玩日历：谱面封面与每天的最高 pp](docs/images/calendar.jpg)
+![十月游玩日历：谱面封面与每天的最高 pp](docs/images/zh-CN/calendar.jpg)
 
 用一张日历回顾整个月。每天的最佳成绩一目了然，点击日期即可重温当天的全部游玩记录。
 
@@ -20,18 +20,20 @@ curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh 
 
 ## 看见自己的进步
 
-回顾 pp 与准确率的变化，探索不同 BPM、AR 和 mods 下的表现，也可以按时间范围查看统计。
+回顾每局 pp 与每日准确率。AR、BPM 图表可切换局数和平均准确率；点击分组，查看对应成绩。
 
-![最近三十天的真实成绩：pp、准确率、串速与 AR 分布](docs/images/statistics.jpg)
+![最近三十天的真实成绩：pp、准确率、节奏、AR 与 BPM](docs/images/zh-CN/statistics.jpg)
 
 ## 重温每一次尝试
 
 在谱面页对比历次成绩、查看难度信息，或一键回到游戏。支持按图名、mods、最低 pp 搜索成绩。
 
-![WONDERFUL WONDER 谱面信息与二十条历史成绩](docs/images/beatmap-history.jpg)
+![WONDERFUL WONDER 谱面信息与二十条历史成绩](docs/images/zh-CN/beatmap-history.jpg)
 
 自动记录新成绩，也能导入已有的 lazer 历史。成绩保存在自己的电脑上，随时可以导出。
 
-*截图来自真实日记，看板目前使用中文界面。*
+随时切换 **English / 简体中文**。语言偏好会自动记住，筛选条件和未保存的设置也会保留。
+
+*截图来自真实日记。*
 
 [安装与排错](docs/usage.zh-CN.md) · [参与开发](CONTRIBUTING.md) · [MIT 许可证](LICENSE) · [第三方声明](THIRD_PARTY_NOTICES.md)

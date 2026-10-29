@@ -1,52 +1,73 @@
-// A complete isolated UI smoke test using synthetic scores, never a personal diary.
+// Isolated bilingual UI tests. No personal configuration, API credentials or diary writes.
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import assert from 'node:assert/strict';
 import { Window } from 'happy-dom';
 import { seed } from './fixtures.mjs';
-
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'osu-diary-ui-'));
-process.env.OSU_DIARY_CONFIG = path.join(tmp, 'config.json');
-process.env.OSU_DIARY_DATA = path.join(tmp, 'data');
-process.env.TOSU_WS = '';
-const { createServer } = await import('../server.mjs');
-const app = await createServer({ port: 0 });
-seed(app.db);
-await app.start();
-const base = `http://127.0.0.1:${app.server.address().port}`;
-const window = new Window({ url: base + '/#cal' });
-window.fetch = (url, opts) => fetch(new URL(String(url), base), opts);
-window.confirm = () => false;
-window.open = () => {};
-const root = path.resolve(import.meta.dirname, '..');
-const pause = () => new Promise(r => setTimeout(r, 250));
-try {
-  window.document.write(fs.readFileSync(path.join(root, 'web/index.html'), 'utf8'));
-  window.document.close();
-  window.eval(fs.readFileSync(path.join(root, 'web/app.js'), 'utf8'));
-  await pause();
-  const doc = window.document;
-  assert.ok(doc.querySelectorAll('.cal-cell').length >= 28);
-  const day = doc.querySelector('.cal-cell[data-day]'); assert.ok(day);
-  day.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); await pause();
-  assert.equal(doc.querySelector('#drawer').hidden, false);
-  assert.ok(doc.querySelectorAll('#drawer .play-row').length);
-  for (const view of ['stats', 'plays']) {
-    window.location.hash = '#' + view; window.dispatchEvent(new window.Event('hashchange')); await pause();
-    if (view === 'stats') for (const id of ['chartPp', 'chartStream', 'chartAr', 'chartBpm']) assert.ok(doc.querySelector(`#${id} svg`), id);
-    else assert.equal(doc.querySelectorAll('#playsTable tbody tr').length, 12);
-  }
-  const th = doc.querySelector('#playsTable th[data-sort="acc"]');
-  th.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); await pause();
-  assert.equal(th.querySelector('.sdir').textContent, '▼');
-  th.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); await pause();
-  assert.equal(th.querySelector('.sdir').textContent, '▲');
-  const link = doc.querySelector('#playsTable tbody tr a[href^="#map?"]'); assert.ok(link);
-  window.location.hash = link.getAttribute('href'); window.dispatchEvent(new window.Event('hashchange')); await pause();
-  assert.match(doc.querySelector('#mapBody').innerHTML, /map-title/);
-  console.log('PASS: synthetic calendar, drawer, charts, list sorting and beatmap page');
-} finally {
-  await window.happyDOM.close(); await new Promise(r => app.server.close(r)); app.db.close();
-  fs.rmSync(tmp, { recursive: true, force: true });
+const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'osu-diary-ui-'));
+process.env.OSU_DIARY_CONFIG=path.join(tmp,'config.json');process.env.OSU_DIARY_DATA=path.join(tmp,'data');process.env.TOSU_WS='';
+const {createServer}=await import('../server.mjs');
+const app=await createServer({port:0});seed(app.db);await app.start();
+const base=`http://127.0.0.1:${app.server.address().port}`,root=path.resolve(import.meta.dirname,'..'),windows=[];
+const wait=async predicate=>{for(let i=0;i<250;i++){if(predicate())return;await new Promise(r=>setTimeout(r,20));}throw new Error('UI condition timed out');};
+function boot({languages=['en-CA','zh-CN'],saved,blocked=false}={}){
+ const w=new Window({url:base+'/#cal'});windows.push(w);
+ Object.defineProperty(w.navigator,'languages',{value:languages,configurable:true});
+ if(saved)w.localStorage.setItem('osu-diary.language',saved);
+ if(blocked)Object.defineProperty(w,'localStorage',{get(){throw new Error('Storage blocked');}});
+ w.fetch=(url,opts)=>fetch(new URL(String(url),base),opts);w.confirm=()=>false;w.open=()=>{};
+ w.document.write(fs.readFileSync(path.join(root,'web/index.html'),'utf8'));w.document.close();
+ for(const file of ['i18n.js','charts.js','app.js'])w.eval(fs.readFileSync(path.join(root,'web',file),'utf8'));
+ return w;
 }
+const change=(w,id,value)=>{const el=w.document.getElementById(id);el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
+const route=async(w,hash,ready)=>{w.location.hash=hash;w.dispatchEvent(new w.Event('hashchange'));await wait(ready);};
+try{
+ const w=boot(),d=w.document;
+ await wait(()=>d.querySelectorAll('.cal-cell[data-day]').length>0);
+ assert.equal(d.documentElement.lang,'en');assert.equal(d.querySelector('[data-nav="stats"]').textContent,'Statistics');
+ d.querySelector('.cal-cell[data-day]').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+ await wait(()=>d.querySelectorAll('#drawer .play-row').length>0);assert.match(d.querySelector('#drawerBody').textContent,/12 plays/);
+ d.getElementById('drawerClose').click();
+ await route(w,'#stats',()=>d.querySelectorAll('#chartAr .bucket-mark').length>0);
+ for(const id of ['chartPp','chartAcc','chartStream','chartAr','chartBpm'])assert.ok(d.querySelector('#'+id+' svg'),id);
+ assert.ok(d.querySelector('#chartAcc circle'),'one-day accuracy is visible');
+ const scatter=d.querySelector('#chartPp svg');scatter.dispatchEvent(new w.FocusEvent('focus'));scatter.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert.ok(d.getElementById('chartTip').textContent.includes('Accuracy'));scatter.dispatchEvent(new w.FocusEvent('blur'));
+ const first=d.querySelector('#chartPp circle[data-timestamp]'),daily=d.querySelector('#chartPp circle[data-series]');
+ assert.equal(first.getAttribute('cx'),daily.getAttribute('cx'),'noon points and daily markers use one time scale');
+ change(w,'chartArMode','accuracy');assert.equal(d.querySelector('#chartAr .bucket-mark').tagName.toLowerCase(),'circle');
+ change(w,'chartArStep','0.1');await wait(()=>d.querySelector('#chartAr .bucket-mark')?.getAttribute('data-upper')==='9.3');
+ const bar=d.querySelector('#chartAr .bucket-mark');bar.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+ await wait(()=>d.querySelector('#chartArDetail table'));
+ assert.match(d.querySelector('#chartArDetail').textContent,/4 matching scores/);
+ change(w,'statsRange','30');await wait(()=>d.querySelector('#chartArDetail table'));
+ assert.equal(w.DiaryCharts.accuracyDomain([30,99])[0],25);assert.equal(w.DiaryCharts.accuracyDomain([0,100])[0],0);assert.equal(w.DiaryCharts.accuracyDomain([99],true)[0],0);
+ assert.equal(w.DiaryCharts.segments([{d:'2026-03-07',v:1},{d:'2026-03-08',v:2},{d:'2026-03-10',v:3}],'v').length,2);
+ for(const el of d.querySelectorAll('svg [cx],svg [cy],svg path'))for(const attr of ['cx','cy','d'])assert.ok(!/NaN|Infinity/.test(el.getAttribute(attr)||''));
+ await route(w,'#plays',()=>d.querySelectorAll('#playsTable tbody tr').length===12);
+ d.querySelector('th[data-sort="acc"]').click();await wait(()=>d.querySelector('th[data-sort="acc"] .sdir').textContent==='▼');
+ d.querySelector('th[data-sort="acc"]').click();await wait(()=>d.querySelector('th[data-sort="acc"] .sdir').textContent==='▲');
+ const link=d.querySelector('#playsTable tbody tr a[href^="#map?"]');
+ await route(w,link.getAttribute('href'),()=>d.querySelector('.map-title'));assert.match(d.querySelector('#mapBody').textContent,/Score history/);
+ await route(w,'#settings',()=>d.querySelector('#cfgUsers').value==='');
+ await new Promise(r=>setTimeout(r,100));
+ for(const [id,value]of [['cfgUsers','UnsavedPlayer'],['cfgClientId','fake-id'],['cfgClientSecret','fake-secret']])d.getElementById(id).value=value;
+ change(w,'language','zh-CN');assert.equal(d.documentElement.lang,'zh-CN');assert.equal(d.getElementById('cfgClientSecret').value,'fake-secret');assert.equal(d.getElementById('cfgUsers').value,'UnsavedPlayer');assert.equal(d.querySelector('[data-nav="stats"]').textContent,'统计');
+ assert.equal(d.getElementById('chartArMode').value,'accuracy');assert.equal(d.getElementById('chartArStep').value,'0.1');assert.equal(d.getElementById('statsRange').value,'30');
+ change(w,'language','en');assert.equal(w.localStorage.getItem('osu-diary.language'),'en');
+ d.getElementById('btnPullPp').click();await wait(()=>d.querySelector('#pullMsg').classList.contains('err'));
+ assert.match(d.querySelector('#pullMsg').textContent,/client ID and secret/);
+ change(w,'language','zh-CN');assert.match(d.querySelector('#pullMsg').textContent,/填写 osu! API/);
+ const cn=boot({languages:['zh-TW','en']});await wait(()=>cn.document.querySelectorAll('.cal-cell').length>0);assert.equal(cn.document.documentElement.lang,'zh-CN');
+ const saved=boot({languages:['en'],saved:'zh-CN'});assert.equal(saved.document.documentElement.lang,'zh-CN');
+ const blocked=boot({languages:['fr-FR'],blocked:true});assert.equal(blocked.document.documentElement.lang,'en');change(blocked,'language','zh-CN');assert.equal(blocked.document.documentElement.lang,'zh-CN');
+ const none={agg:{maxPp:null},series:[],ppSeries:[],stream:[],arBuckets:[],bpmBuckets:[],range:{plotFrom:0,plotTo:86400000,timeZone:'UTC'},points:{pp:{total:0,shown:0},tempo:{total:0,shown:0}}};
+ w.DiaryCharts.render(none,{onPlay:()=>{},onBucket:()=>{}});assert.equal(d.querySelectorAll('#chartAcc svg').length,0);assert.match(d.querySelector('#chartAcc').textContent,/暂无准确率/);
+ await wait(()=>[saved,blocked].every(window=>window.document.querySelectorAll('.cal-cell').length>0));
+ // Known, localized API errors remain additive to legacy response fields.
+ const response=await fetch(base+'/api/stats?arStep=7');assert.equal(response.status,400);const error=await response.json();assert.equal(error.code,'INVALID_BUCKET_STEP');assert.ok(error.error);
+ const missing=await fetch(base+'/api/map');assert.equal((await missing.json()).code,'MAP_REQUIRED');
+ const jp=await (await fetch(base+'/api/pp/pull/progress')).json();assert.equal(jp.status,'error');assert.equal(jp.messageKey,'API_CREDENTIALS_REQUIRED');assert.ok('msg' in jp);
+ console.log('PASS: English/Chinese detection, persistence, blocked storage, calendar, charts, precision, drilldown, sorting, map history, unsaved settings and localized job failures');
+}finally{for(const w of windows)await w.happyDOM.close();await new Promise(r=>app.server.close(r));app.db.close();fs.rmSync(tmp,{recursive:true,force:true});}

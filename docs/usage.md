@@ -14,7 +14,7 @@ Requirements: x86-64 Linux with glibc 2.38+, bash, curl, tar, gzip, coreutils an
 
 The archive includes Node.js, native libraries and the official tosu reader. The installer starts the diary and enables login startup when a systemd user session is available. Otherwise, run `osu-diary start` after logging in. Open [the dashboard](http://127.0.0.1:24051) and launch osu!lazer normally.
 
-A working tosu endpoint on port 24050 is reused. Otherwise, the bundled reader starts with its own configuration. Tracking and historical import primarily target osu!standard on lazer. The dashboard uses Chinese; installer and diagnostic messages use English.
+A working tosu endpoint on port 24050 is reused. Otherwise, the bundled reader starts with its own configuration. Tracking and historical import primarily target osu!standard on lazer. Choose English or 简体中文 in the header. On first use, the dashboard follows your browser’s preferred English/Chinese language, defaulting to English. Explicit choices are remembered when browser storage is available. Installer and diagnostic messages use English.
 
 If the command is not on PATH, use the full path printed by the installer. In fish:
 
@@ -57,7 +57,7 @@ osu-diary serve       # Foreground server; run tosu separately
 
 ## Import and export
 
-Close osu!lazer before importing its history. In the dashboard, open **设置 → 导入历史成绩**, or use:
+Close osu!lazer before importing its history. In the dashboard, open **Settings → Import history**, or use:
 
 ```fish
 osu-diary import realm
@@ -72,9 +72,21 @@ Realm import preserves original score dates, identifies the main player and skip
 
 Legacy CSV import accepts `date,ar,bpm,stars,map,mods,acc,miss,notes`. Exported CSV contains more fields and is not a backup-import format. For a complete backup, stop the diary and copy `diary.db` to a safe location.
 
-Optional osu! API credentials in **设置 → 在线拉取 pp** let you refresh submitted scores with official pp. They are not needed for recording plays. Local historical pp calculations may differ from the current official algorithm.
+Optional osu! API credentials in **Settings → Official pp refresh** let you refresh submitted scores with official pp. They are not needed for recording plays. Local historical pp calculations may differ from the current official algorithm.
 
-Use **设置 → 用户名筛选** to choose which players to record. Automatic filtering uses the live game profile and the identity detected during history import.
+Use **Settings → Player filter** to choose which players to record. Automatic filtering uses the live game profile and the identity detected during history import.
+
+## Reading the charts
+
+Select all time or a rolling 7/30/90-day range. Switching language keeps your page, filters, chart choices and unsaved settings.
+
+- **pp per play:** each pink dot is a play; yellow markers show the daily best at local noon. Both use the same calendar-time axis. Lines stop across days without records. This is per-play pp, not account pp.
+- **Accuracy over time:** solid blue is the daily mean, dashed pink the daily best. Use **Full 0–100%** to compare against a fixed scale; **Data range** zooms to the displayed values.
+- **AR / BPM profile:** **Plays** counts scores; **Accuracy** shows the average of scores with known accuracy. Hover, tap or focus a group for its bounds, score count, sample count, average accuracy and best pp. Click it or press Enter/Space for the matching scores. Groups include their lower bound and exclude their upper bound.
+- Default groups are 0.5 AR / 10 BPM. Choose 0.1 AR / 1 BPM for detail; narrower screens scroll the chart horizontally.
+- **Tempo & Accuracy:** one dot per play; the dashed 95% line is a visual reference, not a difficulty threshold. Focus the pp or tempo chart and use left/right arrows to explore plays; Enter opens the beatmap.
+
+Missing values are excluded only from the affected metric. Averages and group counts use every matching score. For more than 6,000 points, scatter charts display a labeled sample preserving time coverage and metric extremes. Calendar dates use the diary server’s timezone; dates and numbers follow the selected language.
 
 ## Files and configuration
 
@@ -103,7 +115,7 @@ Uninstall removes installer-managed program files and startup integration, keepi
 To select a release, pass `OSU_DIARY_VERSION` to the installer:
 
 ```fish
-curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | env OSU_DIARY_VERSION=v1.0.0 bash
+curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | env OSU_DIARY_VERSION=v1.1.0 bash
 ```
 
 `OSU_DIARY_PREFIX` and `OSU_DIARY_BIN_DIR` customize program and command locations. Existing unmanaged commands and services are preserved. A shell function with the same name may shadow the installed command; use `~/.local/bin/osu-diary` to access the executable directly.

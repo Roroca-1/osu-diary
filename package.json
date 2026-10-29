@@ -1,6 +1,6 @@
 {
   "name": "osu-diary",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "A local osu!lazer score diary with automatic recording, calendar, statistics and pp history.",
   "type": "module",
@@ -25,7 +25,7 @@
     "url": "https://github.com/Roroca-1/osu-diary.git"
   },
   "scripts": {
-    "test": "node --test test/core.test.mjs test/lifecycle.test.mjs test/recording.test.mjs && node test/pp-online-test.mjs",
+    "test": "node --test test/core.test.mjs test/lifecycle.test.mjs test/recording.test.mjs test/statistics.test.mjs && node test/pp-online-test.mjs",
     "test:ui": "node test/ui-test.mjs",
     "build:release": "python3 scripts/build-release.py"
   }

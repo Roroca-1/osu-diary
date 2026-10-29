@@ -14,13 +14,25 @@ curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh 
 
 安装包自带 Node.js、原生依赖和 tosu。安装器会启动日记；有 systemd 用户会话时也会设置登录自启。没有 systemd 时，每次登录后运行 `osu-diary start`。打开[网页看板](http://127.0.0.1:24051)，再照常启动 osu!lazer。
 
-已有可用的 tosu（端口 24050）时会直接使用，否则启动自带的 reader，并使用独立配置。当前主要支持 lazer 的 osu!standard 成绩记录与历史导入。看板使用中文，安装器和诊断信息使用英文。
+已有可用的 tosu（端口 24050）时会直接使用，否则启动自带的 reader，并使用独立配置。当前主要支持 lazer 的 osu!standard 成绩记录与历史导入。看板支持英文与简体中文，安装器和诊断信息使用英文。
 
 如果找不到命令，可以使用安装器打印的完整路径。fish 用户也可运行：
 
 ```fish
 fish_add_path ~/.local/bin
 ```
+
+## 语言与统计图表
+
+在页首选择 **English / 简体中文**。首次使用会跟随浏览器首选的英文或中文，否则默认英文；浏览器允许存储时会记住你的选择。切换语言会保留当前页面、筛选条件、图表选项和未保存的设置。
+
+- **每局 pp**：粉色点代表每局成绩，黄色点代表每日最高 pp，位于当地中午。两者共用真实时间轴，没有记录的日期会断开连线；这不是账号总 pp。
+- **准确率趋势**：蓝色实线是每日平均，粉色虚线是每日最佳。可选择贴合数据的范围，或固定为完整 0–100%。
+- **AR / BPM 分布与表现**：可切换局数和平均准确率。悬停、轻触或聚焦分组，查看边界、局数、已知准确率样本数、平均准确率和最高 pp；点击或按回车/空格查看对应成绩。每组包含下界、不包含上界。
+- 默认精度为 0.5 AR / 10 BPM，另有 0.1 AR / 1 BPM 细节选项；窄屏下可横向滚动。
+- **节奏与准确率**：每个点是一局，95% 虚线仅供参考，不代表难度门槛。聚焦 pp 或节奏图后，按左右方向键查看成绩，按回车打开谱面。
+
+缺失值仅从对应指标中排除。平均值和分组局数使用所有符合条件的成绩；散点超过 6,000 个时会明确标注抽样，并保留时间覆盖及指标极值。日期分组使用日记服务器的时区，日期和数字按所选语言显示。
 
 ## Linux 内存读取权限
 
@@ -103,7 +115,7 @@ osu-diary uninstall
 指定版本安装：
 
 ```fish
-curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | env OSU_DIARY_VERSION=v1.0.0 bash
+curl -fsSL https://raw.githubusercontent.com/Roroca-1/osu-diary/main/install.sh | env OSU_DIARY_VERSION=v1.1.0 bash
 ```
 
 可通过 `OSU_DIARY_PREFIX`、`OSU_DIARY_BIN_DIR` 自定义程序和命令位置。不会覆盖已有的非本安装管理的命令或服务。同名 shell 函数可能遮蔽命令，可使用 `~/.local/bin/osu-diary` 直接运行安装后的程序。
