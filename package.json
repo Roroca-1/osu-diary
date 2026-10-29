@@ -1,0 +1,32 @@
+{
+  "name": "osu-diary",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local osu!lazer score diary with automatic recording, calendar, statistics and pp history.",
+  "type": "module",
+  "bin": {
+    "osu-diary": "bin/osu-diary.mjs"
+  },
+  "engines": {
+    "node": ">=24.15"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1",
+    "realm": "^12.15.0",
+    "rosu-pp": "^0.9.4"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.14.5",
+    "jsdom": "^30.1.1"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Roroca-1/osu-diary.git"
+  },
+  "scripts": {
+    "test": "node --test test/core.test.mjs test/lifecycle.test.mjs test/recording.test.mjs && node test/pp-online-test.mjs",
+    "test:ui": "node test/ui-test.mjs",
+    "build:release": "python3 scripts/build-release.py"
+  }
+}

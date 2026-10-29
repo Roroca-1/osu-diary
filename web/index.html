@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>osu! 日记</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="hdr-left">
+    <h1>osu! <span>日记</span></h1>
+    <div class="sub" id="subTitle">每一次成绩，都值得记住</div>
+  </div>
+  <div class="hdr-right">
+    <span class="dot" id="dotTosu" title="tosu 连接"></span>
+    <span class="dot-lbl" id="lblTosu">tosu</span>
+    <span class="dot" id="dotGame" title="游戏状态"></span>
+    <span class="dot-lbl" id="lblGame">—</span>
+    <nav>
+      <a href="#cal" data-nav="cal">日历</a>
+      <a href="#stats" data-nav="stats">统计</a>
+      <a href="#plays" data-nav="plays">成绩</a>
+      <a href="#settings" data-nav="settings">设置</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- ================= 日历 ================= -->
+  <section id="view-cal">
+    <div class="toolbar">
+      <button id="calPrev" class="ghost">‹</button>
+      <h2 id="calTitle">—</h2>
+      <button id="calNext" class="ghost">›</button>
+      <button id="calToday" class="ghost">今天</button>
+      <span class="spacer"></span>
+      <span class="mut small" id="calSummary"></span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </section>
+
+  <!-- ================= 统计 ================= -->
+  <section id="view-stats" hidden>
+    <div class="toolbar">
+      <h2>统计</h2>
+      <span class="spacer"></span>
+      <select id="statsRange">
+        <option value="all">全部时间</option>
+        <option value="90">最近 90 天</option>
+        <option value="30">最近 30 天</option>
+        <option value="7">最近 7 天</option>
+      </select>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="charts">
+      <div class="panel"><h2>PP 走势</h2><div class="hint">散点 = 每局 pp · 折线 = 每日最高</div><div id="chartPp"></div></div>
+      <div class="panel"><h2>ACC 走势</h2><div class="hint">折线 = 每日平均 · 虚线 = 每日最高</div><div id="chartAcc"></div></div>
+      <div class="panel"><h2>串速 · BPM × ACC</h2><div class="hint">看你在多快 BPM 上还能稳住 acc（横线 = 95%）</div><div id="chartStream"></div></div>
+      <div class="panel"><h2>AR 分布</h2><div class="hint">等效 AR（含 DA/DT 换算，悬停看详情，点击展开成绩明细）</div><div id="chartAr"></div><div id="chartArDetail"></div></div>
+      <div class="panel"><h2>BPM 分布</h2><div class="hint">1 BPM 分箱（悬停看详情，点击展开成绩明细）</div><div id="chartBpm"></div><div id="chartBpmDetail"></div></div>
+      <div class="panel"><h2>Mods 使用</h2><div class="hint"></div><div id="chartMods"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= 谱面页 ================= -->
+  <section id="view-map" hidden>
+    <div class="toolbar">
+      <button class="ghost" id="mapBack">‹ 返回</button>
+      <span class="spacer"></span>
+      <span class="mut small" id="mapLinks"></span>
+    </div>
+    <div id="mapBody"><div class="empty-hint">加载中…</div></div>
+  </section>
+
+  <!-- ================= 成绩列表 ================= -->
+  <section id="view-plays" hidden>
+    <div class="toolbar">
+      <h2>全部成绩</h2>
+      <input id="fQ" placeholder="搜索图名 / mapper…">
+      <input id="fMods" placeholder="mods，如 DT" style="width:110px">
+      <input id="fMinPp" type="number" placeholder="最低 pp" style="width:100px">
+      <span class="spacer"></span>
+      <span class="mut small">点击表头排序，再点一次切换升/降序</span>
+      <span class="mut small" id="playsTotal"></span>
+    </div>
+    <div class="tblwrap"><table id="playsTable">
+      <thead><tr>
+        <th class="sortable" data-sort="played_at">时间<span class="sdir"></span></th>
+        <th>图</th><th>mods</th>
+        <th class="sortable n" data-sort="ar">AR<span class="sdir"></span></th>
+        <th class="sortable n" data-sort="bpm">BPM<span class="sdir"></span></th>
+        <th class="sortable n" data-sort="stars">★<span class="sdir"></span></th>
+        <th class="sortable n" data-sort="acc">acc<span class="sdir"></span></th>
+        <th class="sortable n" data-sort="pp">pp<span class="sdir"></span></th>
+        <th>grade</th>
+        <th class="sortable n" data-sort="nmiss">miss<span class="sdir"></span></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <div class="pager" id="playsPager"></div>
+  </section>
+
+  <!-- ================= 设置 ================= -->
+  <section id="view-settings" hidden>
+    <div class="panel">
+      <h2>运行状态</h2>
+      <div class="status-line" id="statusLine">读取中…</div>
+    </div>
+    <div class="panel">
+      <h2>用户名筛选</h2>
+      <div class="hint">
+        看别人的 replay / 观战时成绩也会出现在结算画面。这里决定<b>哪些玩家的成绩</b>会被记进日记。
+        多个用户名用逗号分隔；<b>留空 = 自动只记录你的游戏账号</b>（从 tosu 读取）。
+      </div>
+      <div class="ftr">
+        <input id="cfgUsers" placeholder="留空 = 只记录自己" style="flex:1;max-width:420px">
+        <button id="btnSaveUsers" class="primary">保存</button>
+        <button id="btnPurgeForeign" class="ghost" style="border-color:var(--bad);color:var(--bad)">清理已记录的非本人成绩</button>
+      </div>
+      <div class="import-msg" id="usersMsg"></div>
+    </div>
+    <div class="panel">
+      <h2>在线拉取 pp（osu! API v2）</h2>
+      <div class="hint">
+        本地 rosu-pp 的算法可能落后于官方。在 <a class="ext" href="https://osu.ppy.sh/home/account/edit#legacy-api" target="_blank">osu! 账户设置</a>
+        创建一个 OAuth 应用（回调随意填），填 client ID / secret 与你的 osu 用户 ID，即可按谱面拉取官方 pp（约 1 秒 1 张图）。
+        <span id="selfInfo" style="color:var(--ok)"></span>
+      </div>
+      <div class="ftr">
+        <input id="cfgClientId" placeholder="client_id" style="width:200px">
+        <input id="cfgClientSecret" placeholder="client_secret" style="width:240px">
+        <input id="cfgOsuUserId" placeholder="osu 用户 ID（纯数字）" style="width:170px">
+        <button id="btnSaveApi" class="ghost">保存凭证</button>
+        <button id="btnPullPp" class="primary">在线拉取 pp</button>
+      </div>
+      <div class="import-msg" id="pullMsg"></div>
+    </div>
+    <div class="panel">
+      <h2>导入历史成绩</h2>
+      <div class="hint">
+        从 lazer 的 <code>client.realm</code> 回填<b>全部历史成绩</b>（含真实成绩时间与本人账号识别），自动完成 mods 换算；
+        填了 API 凭证时优先<b>在线拉取官方 pp</b>，否则用 rosu-pp 本地计算。
+        建议在 osu!lazer 关闭时执行；重复执行不会产生重复记录。
+      </div>
+      <div class="ftr">
+        <button class="primary" id="btnImportRealm">从 lazer 导入历史成绩</button>
+        <button class="ghost" id="btnCalcPp">重算历史 pp</button>
+        <button class="ghost" id="btnExportCsv">导出 CSV</button>
+      </div>
+      <div class="import-msg" id="realmMsg"></div>
+    </div>
+    <div class="panel">
+      <h2>导入旧 CSV</h2>
+      <div class="hint">旧版 <code>osu-reading-log.csv</code>（date,ar,bpm,stars,map,mods,acc,miss,notes）。旧 CSV 中被错误记录的日期无法修正。</div>
+      <div class="ftr">
+        <label class="fbtn" for="csvFile">选择 CSV 文件</label>
+        <input type="file" id="csvFile" accept=".csv" style="display:none">
+      </div>
+      <div class="import-msg" id="csvMsg"></div>
+    </div>
+    <div class="panel">
+      <h2>封面缓存</h2>
+      <div class="hint">封面来自 assets.ppy.sh（离线时回退本地谱面背景）。单个封面在打开日历时按需拉取；也可以一次性预热全部。</div>
+      <div class="ftr">
+        <button class="ghost" id="btnWarmupCovers">预取全部封面</button>
+        <button class="ghost" id="btnClearCovers">清空封面缓存</button>
+      </div>
+      <div class="import-msg" id="coversMsg"></div>
+    </div>
+  </section>
+</main>
+
+<!-- 日详情抽屉 -->
+<div id="drawerMask" hidden></div>
+<aside id="drawer" hidden>
+  <div class="drawer-head">
+    <h2 id="drawerTitle">—</h2>
+    <button class="ghost" id="drawerClose">✕</button>
+  </div>
+  <div id="drawerBody"></div>
+</aside>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+node_modules/
+data/
+testdata/
+dist/
+work/
+*.db
+*.db-*
+*.realm*
+*.log
+.env
+.env.*
+config.json
+*.tmp
+
+__pycache__/
+*.pyc

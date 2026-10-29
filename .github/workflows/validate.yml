@@ -1,0 +1,53 @@
+name: Linux validation
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.2'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci --no-audit --no-fund
+        env:
+          REALM_DISABLE_ANALYTICS: '1'
+      - run: npm test && npm run test:ui
+      - run: python3 scripts/build-release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          retention-days: 7
+  distributions:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['ubuntu:22.04', 'ubuntu:24.04', 'fedora:latest', 'archlinux:latest']
+    container: ${{ matrix.image }}
+    steps:
+      - name: Install desktop baseline tools (no Node.js or development toolchain)
+        shell: bash
+        run: |
+          if command -v apt-get >/dev/null; then apt-get update -qq && apt-get install -y ca-certificates curl tar gzip python3 coreutils; fi
+          if command -v dnf >/dev/null; then dnf install -y ca-certificates curl tar gzip python3 coreutils; fi
+          if command -v pacman >/dev/null; then pacman -Syu --noconfirm --needed ca-certificates curl tar gzip python coreutils; fi
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: dist
+      - name: Exercise install/update/rollback/uninstall
+        shell: bash
+        run: python3 test/install-test.py dist
