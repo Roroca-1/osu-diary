@@ -32,7 +32,7 @@ const candidate = fs.mkdtempSync(path.join(root, 'releases', `v${manifest.versio
 const previousDir = previous ? path.resolve(root, previous) : null;
 let activated = false;
 try {
-  fs.cpSync(source, candidate, { recursive: true });
+  fs.cpSync(source, candidate, { recursive: true, verbatimSymlinks: true });
   const check = spawnSync(path.join(candidate, 'runtime/bin/node'), ['--input-type=module', '-e', "await import('./server.mjs'); await import('realm'); process.exit(0)"], { cwd: candidate, timeout: 20000, encoding: 'utf8' });
   if (check.status !== 0) throw new Error(`The bundled runtime or native libraries cannot run on this Linux system: ${check.stderr}`);
   fs.writeFileSync(path.join(candidate, 'installation.json'), JSON.stringify({ root, launcher }, null, 2));

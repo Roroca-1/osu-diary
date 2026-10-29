@@ -33,6 +33,10 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
         execute(['bash', str(INSTALL)], env)
         assert 'Running:' in execute([str(command), 'status'], env).stdout
         execute([str(command), 'doctor'], env)
+        # The bootstrap's temporary directory is gone: installed runtime links
+        # must remain relative to the installed program, never the download stage.
+        for link in ['vendor/compat/lib/libstdc++.so.6', 'vendor/compat/lib/libgcc_s.so.1', 'runtime/bin/npm']:
+            assert (root/'current'/link).exists(), 'Broken installed symlink: '+link
         tosu_config = home/'tosu probe config/tosu'; tosu_config.mkdir(parents=True)
         tosu_port = free_port()
         (tosu_config/'tosu.env').write_text('ENABLE_AUTOUPDATE=false\nOPEN_DASHBOARD_ON_STARTUP=false\nSERVER_IP=127.0.0.1\nSERVER_PORT='+tosu_port+'\n')
