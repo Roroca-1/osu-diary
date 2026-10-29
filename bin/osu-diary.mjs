@@ -3,25 +3,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { fileURLToPath } from 'node:url';
 
 import { readConfig } from '../lib/config.mjs';
 import { manage, isManagementCommand } from '../lib/manage.mjs';
 const [cmd, ...rest] = process.argv.slice(2);
 const usage = `
-osu-diary — osu! 日记
+osu-diary — local osu!lazer score diary
 
-用法：
+Usage:
   osu-diary start | stop | restart | open | status | enable | disable | log | doctor
-  osu-diary serve              启动服务（tosu 监听 + Web 界面 http://127.0.0.1:24051）
-  osu-diary uninstall          Remove program files; keep diary data/configuration
-  osu-diary import realm       从 lazer 的 client.realm 回填全部历史成绩（真实日期+pp）
-  osu-diary import pp          重算历史成绩 pp（rosu-pp）
-  osu-diary import csv <file>  导入旧版 osu-reading-log.csv
-  osu-diary export <file>      导出全部成绩为 CSV
-  osu-diary status             查看数据库概况
+  osu-diary serve                 Run the server in the foreground
+  osu-diary import realm [path]   Import historical lazer scores; --keep Name1,Name2
+  osu-diary import pp             Recalculate imported pp locally
+  osu-diary import csv <file>     Import legacy nine-column CSV
+  osu-diary export [file]         Export diary scores as CSV
+  osu-diary uninstall             Remove program files; retain data/configuration
 
-环境变量：OSU_DIARY_PORT / TOSU_WS / OSU_DIARY_DATA
+Environment: OSU_DIARY_CONFIG / OSU_DIARY_DATA / OSU_DIARY_PORT / TOSU_WS
 `;
 
 async function main() {
@@ -33,7 +31,7 @@ async function main() {
 
   if (!['serve', 'import', 'export'].includes(cmd)) throw new Error('Unknown command. Run osu-diary help.');
   const { createServer } = await import('../server.mjs');
-  const { openDb, totalCount, lastPlay } = await import('../lib/db.mjs');
+  const { openDb } = await import('../lib/db.mjs');
 
   if (cmd === 'serve') {
     const app = await createServer();
@@ -78,11 +76,6 @@ async function main() {
       const dest = rest[0] || path.join(os.homedir(), 'osu-diary-export.csv');
       fs.writeFileSync(dest, out);
       console.log(`已导出 ${rows.length} 条 → ${dest}`);
-    } else if (cmd === 'status') {
-      const last = lastPlay(db);
-      console.log(`总成绩：${totalCount(db)} 条`);
-      if (last) console.log(`最近一局：${new Date(last.played_at).toISOString()}  ${last.artist} - ${last.title} [${last.version}]  pp ${last.pp ?? '-'}`);
-      else console.log('还没有记录');
     } else {
       console.log(usage);
     }

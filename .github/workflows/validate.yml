@@ -54,3 +54,21 @@ jobs:
       - name: Exercise install/update/rollback/uninstall
         shell: bash
         run: python3 test/install-test.py dist
+  user-service:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: dist
+      - name: Start disposable runner user manager
+        shell: bash
+        run: |
+          sudo loginctl enable-linger "$USER"
+          echo "XDG_RUNTIME_DIR=/run/user/$(id -u)" >> "$GITHUB_ENV"
+          echo "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus" >> "$GITHUB_ENV"
+      - name: Verify real systemd user integration
+        shell: bash
+        run: bash test/systemd-test.sh
