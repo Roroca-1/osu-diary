@@ -4,7 +4,7 @@ set -euo pipefail
 [[ ${GITHUB_ACTIONS:-} == true ]] || { echo 'This test requires a disposable GitHub Actions VM.' >&2; exit 1; }
 [[ ! -e $HOME/.config/systemd/user/osu-diary.service ]] || { echo 'Existing user unit; refusing test.' >&2; exit 1; }
 tmp=$(mktemp -d)
-export OSU_DIARY_PREFIX="$tmp/program files" OSU_DIARY_BIN_DIR="$tmp/bin folder"
+export OSU_DIARY_PREFIX="$tmp/program files \$cash%" OSU_DIARY_BIN_DIR="$tmp/bin folder \$cash%"
 export OSU_DIARY_DATA="$tmp/scores" OSU_DIARY_CONFIG="$tmp/config.json"
 export OSU_DIARY_LOCAL_RELEASE="$PWD/dist" OSU_DIARY_VERSION=v1.0.0
 export OSU_DIARY_NONINTERACTIVE=1 TOSU_WS=''
