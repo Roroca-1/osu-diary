@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: linux-validation-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -41,7 +44,7 @@ jobs:
         shell: bash
         run: |
           if command -v apt-get >/dev/null; then apt-get update -qq && apt-get install -y ca-certificates curl tar gzip python3 coreutils; fi
-          if command -v dnf >/dev/null; then dnf install -y ca-certificates curl tar gzip python3 coreutils; fi
+          if command -v dnf >/dev/null; then dnf install -y --allowerasing ca-certificates curl tar gzip python3 coreutils; fi
           if command -v pacman >/dev/null; then pacman -Syu --noconfirm --needed ca-certificates curl tar gzip python coreutils; fi
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4

@@ -30,8 +30,9 @@ with tempfile.TemporaryDirectory(prefix='osu-diary-build-') as temporary:
         else: shutil.copy2(src, stage / name)
     node_archive = download(f'https://nodejs.org/dist/v{PINS["node"]}/node-v{PINS["node"]}-linux-x64.tar.xz', PINS['nodeSha256'])
     with tarfile.open(node_archive) as archive:
-        # Official archive, with digest pinned above.
-        archive.extractall(temporary, filter='data')
+        # Exact official archive verified by pinned SHA-256. Python 3.10's
+        # data filter mis-resolves Node's relative npm/npx links.
+        archive.extractall(temporary, filter='fully_trusted')
     shutil.move(str(pathlib.Path(temporary) / f'node-v{PINS["node"]}-linux-x64'), stage / 'runtime')
     env = {**os.environ, 'PATH': str(stage / 'runtime/bin') + os.pathsep + os.environ['PATH'], 'REALM_DISABLE_ANALYTICS': '1'}
     subprocess.run([str(stage / 'runtime/bin/npm'), 'ci', '--omit=dev', '--foreground-scripts', '--no-audit', '--no-fund'], cwd=stage, env=env, check=True)
