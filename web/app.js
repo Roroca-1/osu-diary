@@ -241,7 +241,7 @@ function drawStats() {
   window.DiaryCharts.render(s, {fullAccuracy:$('#accuracyScale').value==='full', arMode:$('#chartArMode').value,bpmMode:$('#chartBpmMode').value,onBucket:openBucket, onPlay:p=>{if(p.md5) gotoMap(p.md5);}});
   for (const metric of ['ar','bpm']) {
     const bucket = s[metric+'Buckets'].find(b=>b.lower===selectedBuckets[metric]);
-    if (bucket) openBucket(metric,bucket); else {selectedBuckets[metric]=null; $('#chart'+(metric==='ar'?'Ar':'Bpm')+'Detail').innerHTML='';}
+    if (bucket) openBucket(metric,bucket); else {selectedBuckets[metric]=null; const detail=$('#chart'+(metric==='ar'?'Ar':'Bpm')+'Detail');delete detail.dataset.query;detail.innerHTML='';}
   }
   const entries = Object.entries(s.modCounts).sort((a,b)=>b[1]-a[1]).slice(0,10), max = Math.max(1,...entries.map(e=>e[1]));
   $('#chartMods').innerHTML = entries.map(([mod,n])=>`<div class="mod-row"><span>${esc(mod==='UNKNOWN'?t('Unknown mod'):mod)}</span><div class="mod-track"><div style="width:${n/max*100}%"></div></div><b>${I.number(n)}</b></div>`).join('') || `<div class="empty-hint">${t('No data in this range')}</div>`;
@@ -257,7 +257,7 @@ async function openBucket(metric,bucket) {
     const data = await api('/api/plays?'+signature);
     if (el.dataset.query !== signature) return;
     el.innerHTML = `<div class="hint">${t('{count} matching scores · Showing the first 50',{count:data.total})}</div><div class="tblwrap bucket-table"><table><thead><tr>${['Date','Beatmap','mods','Accuracy','pp','Misses'].map(k=>`<th>${t(k)}</th>`).join('')}</tr></thead><tbody>${data.rows.map(r=>`<tr><td>${fmt.dt(r.played_at)}</td><td>${r.md5?`<a href="${mapLink(r)}">${esc(displayName(r).full)}</a>`:esc(displayName(r).full)}</td><td>${modsPills(r.mods,r.mods_rate)}</td><td>${fmt.acc(r.acc)}</td><td>${fmt.pp(r.pp)}</td><td>${r.nmiss??0}</td></tr>`).join('')}</tbody></table></div>`;
-  } catch(e) { el.textContent=t('Load failed: {error}',{error:errorValue(e)}); }
+  } catch(e) { if(el.dataset.query===signature)el.textContent=t('Load failed: {error}',{error:errorValue(e)}); }
 }
 
 /* ---------------- 成绩列表 ---------------- */
@@ -438,7 +438,15 @@ $('#language').addEventListener('change',()=>{
   if(view==='#settings')refreshStatus();else if(view==='#stats'){if(statsData)drawStats();else renderStats();}else if(view==='#plays')renderPlays();else if(view==='#map')renderMap(new URLSearchParams(location.hash.split('?')[1]).get('md5'));else renderCalendar();
   if(drawerDay)openDrawer(drawerDay);
 });
-if(typeof ResizeObserver!=='undefined'){let timer;new ResizeObserver(()=>{clearTimeout(timer);timer=setTimeout(()=>{if(!$('#view-stats').hidden)drawStats();},100);}).observe($('#view-stats'));}
+if(typeof ResizeObserver!=='undefined') {
+  let timer, lastWidth;
+  new ResizeObserver(([entry])=>{
+    const width=entry.contentRect.width;
+    if(width===lastWidth)return; // Opening score details changes height, not chart coordinates.
+    lastWidth=width;clearTimeout(timer);
+    timer=setTimeout(()=>{if(!$('#view-stats').hidden)drawStats();},100);
+  }).observe($('#view-stats'));
+}
 
 let debounceTimer = null;
 const bindFilter = (sel, key) => $(sel).addEventListener('input', () => {

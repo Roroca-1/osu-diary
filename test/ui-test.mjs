@@ -13,6 +13,7 @@ const base=`http://127.0.0.1:${app.server.address().port}`,root=path.resolve(imp
 const wait=async predicate=>{for(let i=0;i<250;i++){if(predicate())return;await new Promise(r=>setTimeout(r,20));}throw new Error('UI condition timed out');};
 function boot({languages=['en-CA','zh-CN'],saved,blocked=false}={}){
  const w=new Window({url:base+'/#cal'});windows.push(w);
+ w.ResizeObserver=class {constructor(callback){w.testResize=callback;}observe(){}disconnect(){}};
  Object.defineProperty(w.navigator,'languages',{value:languages,configurable:true});
  if(saved)w.localStorage.setItem('osu-diary.language',saved);
  if(blocked)Object.defineProperty(w,'localStorage',{get(){throw new Error('Storage blocked');}});
@@ -38,9 +39,11 @@ try{
  assert.equal(first.getAttribute('cx'),daily.getAttribute('cx'),'noon points and daily markers use one time scale');
  change(w,'chartArMode','accuracy');assert.equal(d.querySelector('#chartAr .bucket-mark').tagName.toLowerCase(),'circle');
  change(w,'chartArStep','0.1');await wait(()=>d.querySelector('#chartAr .bucket-mark')?.getAttribute('data-upper')==='9.3');
+ w.testResize([{contentRect:{width:600,height:800}}]);await new Promise(r=>setTimeout(r,150));
  const bar=d.querySelector('#chartAr .bucket-mark');bar.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
  await wait(()=>d.querySelector('#chartArDetail table'));
  assert.match(d.querySelector('#chartArDetail').textContent,/4 matching scores/);
+ const detailTable=d.querySelector('#chartArDetail table');w.testResize([{contentRect:{width:600,height:1200}}]);await new Promise(r=>setTimeout(r,150));assert.equal(d.querySelector('#chartArDetail table'),detailTable,'height changes must not reload score details');
  change(w,'statsRange','30');await wait(()=>d.querySelector('#chartArDetail table'));
  assert.equal(w.DiaryCharts.accuracyDomain([30,99])[0],25);assert.equal(w.DiaryCharts.accuracyDomain([0,100])[0],0);assert.equal(w.DiaryCharts.accuracyDomain([99],true)[0],0);
  assert.equal(w.DiaryCharts.segments([{d:'2026-03-07',v:1},{d:'2026-03-08',v:2},{d:'2026-03-10',v:3}],'v').length,2);
