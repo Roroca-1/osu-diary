@@ -43,8 +43,10 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
                 for _ in range(80):
                     try:
                         import urllib.request
-                        with urllib.request.urlopen('http://127.0.0.1:'+tosu_port+'/json/v2', timeout=1) as r:
-                            assert isinstance(json.load(r), dict)
+                        with urllib.request.urlopen('http://127.0.0.1:'+tosu_port+'/', timeout=1) as r:
+                            assert r.status == 200
+                        check = execute([str(command), 'doctor'], {**env, 'TOSU_WS':'ws://127.0.0.1:'+tosu_port+'/websocket/v2'})
+                        assert '(reachable)' in check.stdout, check.stdout
                         break
                     except Exception:
                         if reader.poll() is not None: raise AssertionError('tosu exited: '+tosu_log.read_text())
@@ -54,7 +56,7 @@ with tempfile.TemporaryDirectory(prefix='osu diary install tests ') as temp:
                 reader.terminate()
                 try: reader.wait(timeout=10)
                 except subprocess.TimeoutExpired: reader.kill(); reader.wait()
-        print('PASS: bundled tosu starts and serves v2 data without a running game', flush=True)
+        print('PASS: bundled tosu starts its dashboard without a running game', flush=True)
         previous = os.readlink(root/'current')
         # Configure and import synthetic data, then verify reinstall preserves both.
         cfg = pathlib.Path(env['OSU_DIARY_CONFIG'])
