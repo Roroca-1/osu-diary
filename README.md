@@ -1,3 +1,4 @@
+[![Buy Me a Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/kanasara)
 # osu-diary
 
 **Every play, remembered.** A personal osu!lazer score diary for Linux.
